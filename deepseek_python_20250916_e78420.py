@@ -1,22 +1,12 @@
 def chat_assistant_page():
-    st.markdown("""
-    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
-        <div class="section-header">AI Policy Assistant</div>
-        <div style="display: flex; gap: 10px;">
-            <div style="padding: 8px 12px; background-color: #f8f9fa; border-radius: 6px; font-size: 14px;">
-                <span style="color: #28a745;">●</span> Online
-            </div>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    st.write("Interact with the AI assistant to manage policies using natural language commands.")
+    st.markdown('<div class="section-header">AI Policy Assistant</div>', unsafe_allow_html=True)
+    st.write("Chat with your AI assistant to manage policies using natural language.")
     
     if "messages" not in st.session_state:
         st.session_state.messages = [
             {
                 "role": "assistant",
-                "content": "Hello! I'm your AI Policy Assistant. I can help you:\n\n• View policies: 'Show me all HR policies'\n• Create policies: 'Add a new IT policy called Security Guidelines'\n• Search policies: 'Find policies about remote work'\n• Update policies: 'Update the leave policy'\n• Get statistics: 'Show me policy statistics'"
+                "content": "Hello! I'm your AI Policy Assistant. I can help you:\n\n• View policies: 'Show me all HR policies'\n• Create policies: 'Add a new IT policy called Security Guidelines'\n• Search policies: 'Find policies about remote work'\n• Update policies: 'Update the leave policy'\n• Get statistics: 'Show me policy statistics'\n\nTry saying: 'Add a new HR policy called Test Policy for All Employees about remote work guidelines'"
             }
         ]
     
@@ -28,45 +18,56 @@ def chat_assistant_page():
             {message["content"]}
         </div>
         """, unsafe_allow_html=True)
-    
-    # Create a custom chat input with file attachment button
-    col1, col2 = st.columns([6, 1])
-    
-    with col1:
-        chat_input = st.text_input(
-            "Type your message...", 
-            key="chat_input",
-            label_visibility="collapsed",
-            placeholder="Type your message..."
-        )
-    
-    with col2:
-        st.markdown("<div style='height: 26px;'></div>", unsafe_allow_html=True)
-        file_attachment = st.button("📎", use_container_width=True, help="Attach files")
-    
-    # Handle file upload when attachment button is clicked
-    attached_files = None
-    if file_attachment:
-        attached_files = st.file_uploader(
-            "Attach documents",
-            accept_multiple_files=True,
-            type=['pdf', 'doc', 'docx', 'txt'],
-            key="file_uploader",
-            label_visibility="collapsed"
-        )
-        if attached_files:
-            st.info(f"{len(attached_files)} file(s) attached")
-    
-    # Process chat input
-    if chat_input:
-        st.session_state.messages.append({"role": "user", "content": chat_input})
-        
-        with st.spinner("Processing..."):
-            response = enhanced_chat_with_ai(chat_input, attached_files=attached_files)
-            st.session_state.messages.append({"role": "assistant", "content": response})
             
-            # Clear the chat input and file attachments
-            st.session_state.chat_input = ""
-            if "file_uploader" in st.session_state:
-                st.session_state.file_uploader = None
+    attached_files = st.file_uploader(
+        "Attach documents (optional)",
+        accept_multiple_files=True,
+        type=['pdf', 'doc', 'docx', 'txt']
+    )
+
+    # Chat input
+    if prompt := st.chat_input("Type your message..."):
+        st.session_state.messages.append({"role": "user", "content": prompt})
+        
+        with st.spinner("Processing your request..."):
+            response = enhanced_chat_with_ai(prompt, attached_files=attached_files)
+            st.session_state.messages.append({"role": "assistant", "content": response})
             st.rerun()
+    
+    st.markdown("---")
+    st.markdown('<div class="section-header">Quick Actions</div>', unsafe_allow_html=True)
+    
+    col1, col2, col3, col4 = st.columns(4)
+    
+    action_buttons = [
+        ("Show All Policies", "Show me all policies"),
+        ("Create Test Policy", "Add a new HR policy called 'Quick Test Policy' for All Employees about testing the system"),
+        ("HR Policies", "Show me all HR policies"),
+        ("Statistics", "Show me policy statistics")
+    ]
+    
+    for i, (label, command) in enumerate(action_buttons):
+        with [col1, col2, col3, col4][i]:
+            if st.button(label, key=f"quick_{i}", use_container_width=True):
+                response = enhanced_chat_with_ai(command, attached_files=attached_files)
+                st.session_state.messages.append({"role": "user", "content": command})
+                st.session_state.messages.append({"role": "assistant", "content": response})
+                st.rerun()
+    
+    with st.expander("Example Commands"):
+        st.markdown("""
+        **Create Policies:**
+        - Add a new HR policy called 'Remote Work Guidelines' for All Employees
+        - Create an IT policy about password security for IT Department
+        - Add a Customer policy called 'Service Standards' for Customer Service Team
+        
+        **View Policies:**
+        - Show me all policies
+        - List all HR policies 
+        - Find policies about security
+        
+        **Get Information:**
+        - How many policies do we have?
+        - Show me expired policies
+        - What's the system status?
+        """)
